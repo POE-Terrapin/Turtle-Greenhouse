@@ -1,0 +1,49 @@
+/*
+ * Terrapin Project
+ * PoE Fall 2016
+ * Zarin Bhuiyan, Jamie Cho, Kaitlyn Keil, Lauren Pudvan, Katya Soltan
+ * 
+ * Sketch Model Code
+ * Started 10/18
+*/
+
+// Motor set up placeholder (might be what we use longterm)
+#include <Wire.h>
+#include <Adafruit_MotorShield.h>
+#include "utility/Adafruit_MS_PWMServoDriver.h"
+
+// Set up motors with pins. For sketch model, all 4
+//  will be doing the same thing.
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_DCMotor *frontMotor0 = AFMS.getMotor(1);
+Adafruit_DCMotor *frontMotor1 = AFMS.getMotor(2);
+Adafruit_DCMotor *backMotor0 = AFMS.getMotor(3);
+Adafruit_DCMotor *backMotor1 = AFMS.getMotor(4);
+
+// Constant values and pins.
+
+// Set up the pins for the different sensors
+//  LS stands for Light Sensor. Numbers increase
+//  clockwise from the front: LS0 is front, LS1 is
+//  at 3 o'clock (from top view), LS2 is in back, etc. 
+const int LS0 = A0, LS2 = A2, LS1 = A1, LS3 = A3;
+
+// Calibration code. Values are currently not known;
+//  scale either this or have a scaling multiplier.
+//  seeLight implies that if the sensor value is greater 
+//  than this value, it is in light.
+int seeLight = 100; // placeholder value
+
+// Create the variables to store sensor values. Each
+//  corresponds with the matching name.
+int LS0val = 0, LS1val = 0, LS2val = 0, LS3val = 0;
+
+void setup() {
+  // put your setup code here, to run once:
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+}
