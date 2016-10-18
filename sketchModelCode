@@ -32,18 +32,68 @@ const int LS0 = A0, LS2 = A2, LS1 = A1, LS3 = A3;
 //  scale either this or have a scaling multiplier.
 //  seeLight implies that if the sensor value is greater 
 //  than this value, it is in light.
-int seeLight = 100; // placeholder value
+const int seeLight = 100; // placeholder value; change when callibrated
+const int mustMove = 45, dontMove = 0; // drive value for wheels
 
 // Create the variables to store sensor values. Each
 //  corresponds with the matching name.
 int LS0val = 0, LS1val = 0, LS2val = 0, LS3val = 0;
 
 void setup() {
-  // put your setup code here, to run once:
-
+  Serial.begin(9600); // start Serial to see values
+  
+  AFMS.begin();
+  // Run all motors forward to begin with (make sure
+  //  they are facing the proper direction)
+  runForward();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  LS0val = analogRead(LS0);
+  LS2val = analogRead(LS2);
+  Serial.print(LS0val);
+  Serial.print(',');
+  Serial.println(LS2val);
 
+  if(LS0val > seeLight && LS2val < seeLight) {
+    runForward();
+    timeToMove();
+  }
+  else if(LS0val < seeLight && LS2val > seeLight) {
+    runBackward();
+    timeToMove();
+  }
+  else {
+    timeToStop();
+  }
+}
+
+void runForward() {
+  // Make all the motors run forward
+  frontMotor0->run(FORWARD);
+  backMotor0->run(FORWARD);
+  frontMotor1->run(FORWARD);
+  backMotor1->run(FORWARD);
+}
+
+void runBackward() {
+  frontMotor0->run(BACKWARD);
+  backMotor0->run(BACKWARD);
+  frontMotor1->run(BACKWARD);
+  backMotor1->run(BACKWARD);
+}
+
+void timeToMove() {
+  frontMotor0->setSpeed(mustMove);
+  backMotor0->setSpeed(mustMove);
+  frontMotor1->setSpeed(mustMove);
+  backMotor1->setSpeed(mustMove);
+}
+
+void timeToStop() {
+  frontMotor0->setSpeed(dontMove);
+  backMotor0->setSpeed(dontMove);
+  frontMotor1->setSpeed(dontMove);
+  backMotor1->setSpeed(dontMove);
 }
