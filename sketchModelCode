@@ -33,7 +33,7 @@ const int LS0 = A0, LS2 = A2, LS1 = A1, LS3 = A3;
 //  seeLight implies that if the sensor value is greater 
 //  than this value, it is in light.
 const int seeLight = 100; // placeholder value; change when callibrated
-const int mustMove = 45, dontMove = 0; // drive value for wheels
+const int mustMove = 45; // drive value for wheels
 
 // Create the variables to store sensor values. Each
 //  corresponds with the matching name.
@@ -92,8 +92,8 @@ void timeToMove() {
 }
 
 void timeToStop() {
-  frontMotor0->setSpeed(dontMove);
-  backMotor0->setSpeed(dontMove);
-  frontMotor1->setSpeed(dontMove);
-  backMotor1->setSpeed(dontMove);
+  frontMotor0->run(RELEASE);
+  backMotor0->run(RELEASE);
+  frontMotor1->run(RELEASE);
+  backMotor1->run(RELEASE);
 }
