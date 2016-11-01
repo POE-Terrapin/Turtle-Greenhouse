@@ -1,0 +1,24 @@
+int s0 = 0, s1 = 1, s2 = 2; // set the values of the select pins for the multiplexer
+
+int multi_pin = A5; // Sets which pin the information is read to
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(s0, OUTPUT);
+  pinMode(s1, OUTPUT);
+  pinMode(s2, OUTPUT);
+  
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+}
+
+int readM0() {
+  digitalWrite(s0, LOW);
+  digitalWrite(s1, LOW);
+  digitalWrite(s2, LOW);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
