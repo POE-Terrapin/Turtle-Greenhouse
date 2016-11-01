@@ -22,3 +22,59 @@ int readM0() {
   int pin_value = analogRead(multi_pin);
   return pin_value;
 }
+
+int readM1() {
+  digitalWrite(s0, HIGH);
+  digitalWrite(s1, LOW);
+  digitalWrite(s2, LOW);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
+
+int readM2() {
+  digitalWrite(s0, LOW);
+  digitalWrite(s1, HIGH);
+  digitalWrite(s2, LOW);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
+
+int readM3() {
+  digitalWrite(s0, HIGH);
+  digitalWrite(s1, HIGH);
+  digitalWrite(s2, LOW);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
+
+int readM4() {
+  digitalWrite(s0, LOW);
+  digitalWrite(s1, LOW);
+  digitalWrite(s2, HIGH);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
+
+int readM5() {
+  digitalWrite(s0, HIGH);
+  digitalWrite(s1, LOW);
+  digitalWrite(s2, HIGH);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
+
+int readM6() {
+  digitalWrite(s0, LOW);
+  digitalWrite(s1, HIGH);
+  digitalWrite(s2, HIGH);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
+
+int readM7() {
+  digitalWrite(s0, HIGH);
+  digitalWrite(s1, HIGH);
+  digitalWrite(s2, HIGH);
+  int pin_value = analogRead(multi_pin);
+  return pin_value;
+}
