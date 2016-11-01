@@ -1,0 +1,93 @@
+#include <Servo.h>
+
+Servo right_servo, left_servo; // A servo for each leg
+
+int f_s_pin = A0, r_s_pin = A1, l_s_pin=A2; // Set up IR sensor pins
+                                            // f_s_pin indicates 'front sensor pin'
+                                            // r_s indicates 'right sensor', etc
+
+int distance_limit = 100; // If the abs() of the normalized value is greater than this,
+                          //  assume something is there.
+
+int f_value, r_value, l_value; // Prepare variables to read sensor values to
+
+void setup() {
+  Serial.begin(9600);
+  right_servo.attach(10);
+  left_servo.attach(11);
+
+  // Start up turtle without anything around the head so that initial values are
+  //  useable for normalizing
+  // Set up global values to normalize the sensors; the first reading
+  const int norm_f_value = analogRead(f_s_pin);
+  const int norm_r_value = analogRead(r_s_pin);
+  const int norm_l_value = analogRead(l_s_pin);
+  
+  delay(2000); // 2 second delay
+}
+
+void loop() {
+  f_value = analogRead(f_ s_pin);
+  r_value = analogRead(r_s_pin);
+  l_value = analogRead(l_s_pin);
+
+  // Decide where to move, then... move there.
+  int directions = compareSensors(f_value, r_value, l_value);
+  movement(directions);
+  
+}
+
+int compareSensors(int f_value, int r_value, int l_value) {
+  // Normalizes and compares the sensor values. Returns 0 for forward, 1 for turn right
+  //  and 2 for turn left
+
+  // Normalize the values based on first read
+  int f_normalized = f_value - norm_f_value;
+  int r_normalized = r_value - norm_r_value;
+  int l_normalized = l_value - norm_l_value;
+
+  if (abs(f_normalized) > distance_limit)) {
+    // If there is something in front of us, check directions to turn
+    if (r_normalized < l_normalized) {
+      // If there is less in the right direction than the left, tell the turtle
+      // to turn right
+      return 1;
+    }
+    else {
+      // Otherwise, turn left
+      return 2;
+    }
+  }
+  else {
+    // Otherwise, keep going forward
+    return 0;
+  }
+  
+  
+}
+
+void movement(int direction_to_move) {
+  if (direction_to_move == 0) {
+    moveForward();
+  }
+  else if (direction_to_move == 1) {
+    turnRight();
+  }
+  else {
+    turnLeft();
+  }
+}
+void moveForward() {
+  // MECH TEAM INSERT FORWARD MOVEMENT CODE HERE
+  Serial.println('Forward');
+}
+
+void turnLeft() {
+  // MECH TEAM INSERT LEFT TURN CODE HERE
+  Serial.println('Left');
+}
+
+void turnRight() {
+  // MECH TEAM INSERT RIGHT TURN CODE HERE
+  Serial.println('Right');
+}
