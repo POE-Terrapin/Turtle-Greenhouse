@@ -9,6 +9,7 @@ int f_s_pin = A0, r_s_pin = A1, l_s_pin=A2; // Set up IR sensor pins
 int distance_limit = 100; // If the abs() of the normalized value is greater than this,
                           //  assume something is there.
 
+int norm_f_value, norm_r_value, norm_l_value;
 int f_value, r_value, l_value; // Prepare variables to read sensor values to
 
 void setup() {
@@ -19,15 +20,15 @@ void setup() {
   // Start up turtle without anything around the head so that initial values are
   //  useable for normalizing
   // Set up global values to normalize the sensors; the first reading
-  const int norm_f_value = analogRead(f_s_pin);
-  const int norm_r_value = analogRead(r_s_pin);
-  const int norm_l_value = analogRead(l_s_pin);
+  norm_f_value = analogRead(f_s_pin);
+  norm_r_value = analogRead(r_s_pin);
+  norm_l_value = analogRead(l_s_pin);
   
   delay(2000); // 2 second delay
 }
 
 void loop() {
-  f_value = analogRead(f_ s_pin);
+  f_value = analogRead(f_s_pin);
   r_value = analogRead(r_s_pin);
   l_value = analogRead(l_s_pin);
 
@@ -46,7 +47,7 @@ int compareSensors(int f_value, int r_value, int l_value) {
   int r_normalized = r_value - norm_r_value;
   int l_normalized = l_value - norm_l_value;
 
-  if (abs(f_normalized) > distance_limit)) {
+  if (abs(f_normalized) > distance_limit) {
     // If there is something in front of us, check directions to turn
     if (r_normalized < l_normalized) {
       // If there is less in the right direction than the left, tell the turtle
