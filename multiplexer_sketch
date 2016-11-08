@@ -1,6 +1,6 @@
 int s0 = 0, s1 = 1, s2 = 2; // set the values of the select pins for the multiplexer
 
-int multi_pin = A5; // Sets which pin the information is read to
+int multi_pin = A0; // Sets which pin the information is read to
 
 void setup() {
   // put your setup code here, to run once:
