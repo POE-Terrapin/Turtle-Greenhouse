@@ -103,6 +103,10 @@ void loop() {
     int directions = checkPath();
     movement(directions);
   }
+  else if(LS0val < see_light && LS2val < see_light) {
+    int directions = checkPath();
+    movement(directions);
+  }
   else if(LS0val < see_light && LS2val > see_light) {
     runBackward();
     timeToMove();
