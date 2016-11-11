@@ -95,10 +95,8 @@ void setup() {
 
 void loop() {
   // Read the light sensors
-  LS0val = readMultiplexer(f_ir);
-  //delay(500);
-  LS2val = readMultiplexer(r_ir);
-  //delay(500);
+  LS0val = readMultiplexer(LS0);
+  LS2val = readMultiplexer(LS2);
   //LS2val = analogRead(A1);
   
   Serial.print("Light Sensors: ");
@@ -121,7 +119,8 @@ void loop() {
 //  }
   else { // Otherwise, just stop.
     timeToStop();
-  }*/
+  }
+  */
 }
 
 
