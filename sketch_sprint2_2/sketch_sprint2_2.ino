@@ -103,7 +103,7 @@ void loop() {
   Serial.print(LS0val);
   Serial.print(',');
   Serial.println(LS2val);
-/*
+
   // Check the values to see if we need to move. If so, decide a direction.
   if(LS0val > SEE_LIGHT && LS2val < SEE_LIGHT) { // Back sensor is covered
     int directions = checkPath(); // checks to see which direction it should go
@@ -120,7 +120,7 @@ void loop() {
   else { // Otherwise, just stop.
     timeToStop();
   }
-  */
+  
 }
 
 
