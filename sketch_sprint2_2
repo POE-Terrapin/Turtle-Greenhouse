@@ -38,7 +38,7 @@ const int Eye1 = 8, Eye2 = 9;
 
 // IR sensor pins on the multiplexer
 //  f_ir indicates 'front IR', r_ir is 'right IR', l_ir is 'left IR'
-const int f_ir = 2, r_ir = 3, l_ir=4;
+const int f_ir = 4, r_ir = 3; // l_ir=4; // there is currently no left sensor
 
 // Calibration code. Values are subject to change.
 //  see_light implies that if the sensor value is greater 
@@ -80,15 +80,15 @@ void setup() {
   digitalWrite(Eye2, LOW);
   // Start up turtle without anything around the head so that initial values are
   //  useable for normalizing
-  // Set up global values to normalize the sensors; the first reading
+  // Set up global values to normalize the sensors
   norm_f_value = readMultiplexer(f_ir);
   norm_r_value = readMultiplexer(r_ir);
-  norm_l_value = readMultiplexer(l_ir);
+//  norm_l_value = readMultiplexer(l_ir);
   Serial.print(norm_f_value);
   Serial.print(',');
-  Serial.print(norm_r_value);
-  Serial.print(',');
-  Serial.println(norm_l_value);
+  Serial.println(norm_r_value);
+//  Serial.print(',');
+//  Serial.println(norm_l_value);
   delay(2000); // 2 second delay
   Serial.println('Start');
 }
@@ -97,21 +97,25 @@ void loop() {
   // Read the light sensors
   LS0val = readMultiplexer(LS0);
   LS2val = readMultiplexer(LS2);
+  Serial.print("Light Sensors: ");
+  Serial.print(LS0val);
+  Serial.print(',');
+  Serial.println(LS2val);
 
   // Check the values to see if we need to move. If so, decide a direction.
-  if(LS0val > see_light && LS2val < see_light) {
-    int directions = checkPath();
-    movement(directions);
+  if(LS0val > see_light && LS2val < see_light) { // Back sensor is covered
+    int directions = checkPath(); // checks to see which direction it should go
+    movement(directions); // moves in that direction
   }
-  else if(LS0val < see_light && LS2val > see_light) {
-    runBackward();
-    timeToMove();
+  else if(LS0val < see_light && LS2val > see_light) { // Front sensor is covered
+    runBackward(); // Goes backwards
+    timeToMove(); // Moves
   }
-  else if(LS0val < see_light && LS2val < see_light) {
-    int directions = checkPath();
-    movement(directions);
-  }
-  else {
+//  else if(LS0val < see_light && LS2val < see_light) { // Both sensors are covered
+//    int directions = checkPath();
+//    movement(directions);
+//  }
+  else { // Otherwise, just stop.
     timeToStop();
   }
 }
@@ -122,18 +126,18 @@ int checkPath() {
   //  1 for turn right, and 2 for turn left
   f_value = readMultiplexer(f_ir);
   r_value = readMultiplexer(r_ir);
-  l_value = readMultiplexer(l_ir);
+//  l_value = readMultiplexer(l_ir);
 
   // Normalize the values based on first read
   int f_normalized = f_value - norm_f_value;
   int r_normalized = r_value - norm_r_value;
-  int l_normalized = l_value - norm_l_value;
+//  int l_normalized = l_value - norm_l_value;
   Serial.print("IR Sensors: ");
   Serial.print(f_normalized);
   Serial.print(',');
-  Serial.print(r_normalized);
-  Serial.print(',');
-  Serial.println(l_normalized);
+  Serial.println(r_normalized);
+//  Serial.print(',');
+//  Serial.println(l_normalized);
 
   if (abs(f_normalized) > distance_limit) {
     // If there is something in front of us, check directions to turn
@@ -251,6 +255,7 @@ int readMultiplexer(int pin_num) {
 }
 
 // Functions to read specific pins from the multiplexer
+// High-Low things are based on http://www.ti.com/lit/ds/symlink/cd4051b.pdf
 int readM0() {
   digitalWrite(s0, LOW);
   digitalWrite(s1, LOW);
