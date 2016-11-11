@@ -30,7 +30,7 @@ Adafruit_DCMotor *backMotor1 = AFMS.getMotor(4);
 const int LS0 = 0, LS2 = 1;// LS1 = A1, LS3 = A3;
 
 // Set up multiplexer pins
-const int s0 = 0, s1 = 1, s2 = 2; // select pins
+const int s[3] = {2, 3, 4};
 const int multi_pin = A0; // pin to read from/output pin
 
 // Eye1 and Eye2 power LEDs.
@@ -41,12 +41,12 @@ const int Eye1 = 8, Eye2 = 9;
 const int f_ir = 4, r_ir = 3; // l_ir=4; // there is currently no left sensor
 
 // Calibration code. Values are subject to change.
-//  see_light implies that if the sensor value is greater 
+//  SEE_LIGHT implies that if the sensor value is greater 
 //  than this value, it is in light.
-//  distance_limit is the value above which, the IRs sense
+//  DISTANCE_LIMIT is the value above which, the IRs sense
 //  an object in that direction.
-const int see_light = 100, distance_limit = 150;
-const int must_move = 150; // drive value for wheels
+const int SEE_LIGHT = 100, DISTANCE_LIMIT = 150;
+const int MOTOR_SPEED = 150; // drive value for wheels
 
 // Create the variables to store sensor values. Each
 //  corresponds with the matching name.
@@ -67,9 +67,9 @@ void setup() {
   Serial.println("Motors running forward...");
   
   // Set up multiplexer pins
-  pinMode(s0, OUTPUT);
-  pinMode(s1, OUTPUT);
-  pinMode(s2, OUTPUT);
+  pinMode(s[0], OUTPUT);
+  pinMode(s[1], OUTPUT);
+  pinMode(s[2], OUTPUT);
 
   // Turn on both of the LEDs for the eyes.
   pinMode(Eye1, OUTPUT);
@@ -95,29 +95,33 @@ void setup() {
 
 void loop() {
   // Read the light sensors
-  LS0val = readMultiplexer(LS0);
-  LS2val = readMultiplexer(LS2);
+  LS0val = readMultiplexer(f_ir);
+  //delay(500);
+  LS2val = readMultiplexer(r_ir);
+  //delay(500);
+  //LS2val = analogRead(A1);
+  
   Serial.print("Light Sensors: ");
   Serial.print(LS0val);
   Serial.print(',');
   Serial.println(LS2val);
-
+/*
   // Check the values to see if we need to move. If so, decide a direction.
-  if(LS0val > see_light && LS2val < see_light) { // Back sensor is covered
+  if(LS0val > SEE_LIGHT && LS2val < SEE_LIGHT) { // Back sensor is covered
     int directions = checkPath(); // checks to see which direction it should go
     movement(directions); // moves in that direction
   }
-  else if(LS0val < see_light && LS2val > see_light) { // Front sensor is covered
+  else if(LS0val < SEE_LIGHT && LS2val > SEE_LIGHT) { // Front sensor is covered
     runBackward(); // Goes backwards
     timeToMove(); // Moves
   }
-//  else if(LS0val < see_light && LS2val < see_light) { // Both sensors are covered
+//  else if(LS0val < SEE_LIGHT && LS2val < SEE_LIGHT) { // Both sensors are covered
 //    int directions = checkPath();
 //    movement(directions);
 //  }
   else { // Otherwise, just stop.
     timeToStop();
-  }
+  }*/
 }
 
 
@@ -139,9 +143,9 @@ int checkPath() {
 //  Serial.print(',');
 //  Serial.println(l_normalized);
 
-  if (abs(f_normalized) > distance_limit) {
+  if (abs(f_normalized) > DISTANCE_LIMIT) {
     // If there is something in front of us, check directions to turn
-    if (r_normalized < distance_limit)  {
+    if (r_normalized < DISTANCE_LIMIT)  {
       // If there is nothing to the right, tell the turtle
       // to turn right
       return 1;
@@ -210,10 +214,10 @@ void turnRight() {
 }
 
 void timeToMove() {
-  frontMotor0->setSpeed(must_move);
-  backMotor0->setSpeed(must_move);
-  frontMotor1->setSpeed(must_move);
-  backMotor1->setSpeed(must_move);
+  frontMotor0->setSpeed(MOTOR_SPEED);
+  backMotor0->setSpeed(MOTOR_SPEED);
+  frontMotor1->setSpeed(MOTOR_SPEED);
+  backMotor1->setSpeed(MOTOR_SPEED);
 }
 
 void timeToStop() {
@@ -226,96 +230,9 @@ void timeToStop() {
 }
 
 // Returns the value of the requested pin from the multiplexer
-
 int readMultiplexer(int pin_num) {
-  if (pin_num == 0) {
-    return readM0();
-  }
-  else if (pin_num == 1) {
-    return readM1();
-  }
-  else if (pin_num == 2) {
-    return readM2();
-  }
-  else if (pin_num == 3) {
-    return readM3();
-  }
-  else if (pin_num == 4) {
-    return readM4();
-  }
-  else if (pin_num == 5) {
-    return readM5();
-  }
-  else if (pin_num == 6) {
-    return readM6();
-  }
-  else if (pin_num == 7) {
-    return readM7();
-  }
-}
-
-// Functions to read specific pins from the multiplexer
-// High-Low things are based on http://www.ti.com/lit/ds/symlink/cd4051b.pdf
-int readM0() {
-  digitalWrite(s0, LOW);
-  digitalWrite(s1, LOW);
-  digitalWrite(s2, LOW);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM1() {
-  digitalWrite(s0, HIGH);
-  digitalWrite(s1, LOW);
-  digitalWrite(s2, LOW);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM2() {
-  digitalWrite(s0, LOW);
-  digitalWrite(s1, HIGH);
-  digitalWrite(s2, LOW);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM3() {
-  digitalWrite(s0, HIGH);
-  digitalWrite(s1, HIGH);
-  digitalWrite(s2, LOW);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM4() {
-  digitalWrite(s0, LOW);
-  digitalWrite(s1, LOW);
-  digitalWrite(s2, HIGH);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM5() {
-  digitalWrite(s0, HIGH);
-  digitalWrite(s1, LOW);
-  digitalWrite(s2, HIGH);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM6() {
-  digitalWrite(s0, LOW);
-  digitalWrite(s1, HIGH);
-  digitalWrite(s2, HIGH);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
-}
-
-int readM7() {
-  digitalWrite(s0, HIGH);
-  digitalWrite(s1, HIGH);
-  digitalWrite(s2, HIGH);
-  int pin_value = analogRead(multi_pin);
-  return pin_value;
+    digitalWrite(s[0], (pin_num & 1)? HIGH : LOW);
+    digitalWrite(s[1], (pin_num & 2)? HIGH : LOW);
+    digitalWrite(s[2], (pin_num & 4)? HIGH : LOW);
+    return analogRead(multi_pin);
 }
