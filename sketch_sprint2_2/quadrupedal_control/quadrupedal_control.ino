@@ -41,7 +41,7 @@ float delta_left_backwards = (left_femur_left - left_femur_right) / total_right_
 float delta_right_backwards = (right_femur_left - right_femur_right) / total_left_deg_travel;
 
 void loop() {
- moveBackward();
+ moveForward();
   //moveRightForwardOpposite();
   //moveLeftBackwardOpposite();
   //moveForward();
