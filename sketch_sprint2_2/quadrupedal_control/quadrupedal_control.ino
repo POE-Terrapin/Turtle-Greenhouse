@@ -19,12 +19,14 @@ float right_femur_right = 90;
 float right_tibia_down = 180;
 float right_tibia_up = 90;
 
-float left_femur_left = 90;
-float left_femur_right = 140;
+float left_femur_left = 140;
+float left_femur_right = 90;
 float left_tibia_down = 180;
 float left_tibia_up = 90;
 
 boolean right_moving = true;
+//boolean left_moving = true;
+
 float right_tibia = right_tibia_down;
 float right_femur = right_femur_right;
 float left_tibia = left_tibia_down;
@@ -32,9 +34,9 @@ float left_femur = left_femur_right;
 
 float delta = 1; // degrees servo moves each step
 float total_right_deg_travel = delta * (right_femur_left - right_femur_right) + 2 * (right_tibia_down - right_tibia_up);
-float total_left_deg_travel = delta * (left_femur_right - right_femur_left) + 2 * (right_tibia_down - right_tibia_up);
+float total_left_deg_travel = delta * (left_femur_left - right_femur_right) + 2 * (right_tibia_down - right_tibia_up);
 
-float delta_left_backwards = (left_femur_right - left_femur_left) / total_right_deg_travel;
+float delta_left_backwards = (left_femur_left - left_femur_right) / total_right_deg_travel;
 float delta_right_backwards = (right_femur_left - right_femur_right) / total_left_deg_travel;
 
 void loop() {
@@ -44,22 +46,17 @@ void loop() {
 void moveForward(){
   if(right_moving){
     moveRightForward();
-    //moveLeftBackward();
+//    moveLeftForward();
+    moveLeftBackward();
   }
   else{
-    //moveLeftForward();
+    moveLeftForward();
     moveRightBackward();
+//    moveLeftBackward();
   }
 }
 
 void moveRightForward(){
-  Serial.print("Femur: ");
-  Serial.print(right_femur);
-  Serial.println();
-  Serial.print("Tibia: ");
-  Serial.print(right_tibia);
-  Serial.println();
-
   if(right_femur <= right_femur_left && right_tibia >= right_tibia_up){
     // move tibia up
     right_tibia -= delta;
@@ -77,7 +74,7 @@ void moveRightForward(){
   }
   else if(right_femur >= right_femur_left && right_tibia >= right_tibia_down){
     right_moving = false;
-    // set left legs to starting pos
+//     set left legs to starting pos
     left_tibia = left_tibia_down;
     left_femur = left_femur_left;
     left_tibia_servo.write(left_tibia);
@@ -88,13 +85,13 @@ void moveRightForward(){
 
 
 void moveLeftForward(){
-  Serial.print("Femur: ");
+  Serial.print("Left Femur: ");
   Serial.print(left_femur);
   Serial.println();
-  Serial.print("Tibia: ");
+  Serial.print("Left Tibia: ");
   Serial.print(left_tibia);
   Serial.println();
-  if(left_femur > left_femur_right && left_tibia > left_tibia_up){
+  if(left_femur >= left_femur_left && left_tibia > left_tibia_up){
     // move tibia up
     left_tibia -= delta;
     left_tibia_servo.write(left_tibia);
@@ -111,6 +108,7 @@ void moveLeftForward(){
   }
   else if(left_femur <= left_femur_right && left_tibia >= left_tibia_down){
     right_moving = true;
+//    left_moving = false;
     // set right legs to starting pos
     right_tibia = right_tibia_down;
     right_femur = right_femur_right;
@@ -127,15 +125,26 @@ void moveRightBackward(){
     right_femur -= delta_right_backwards;
     right_femur_servo.write(right_femur);
   }
+//  else{
+//    right_moving = true;
+//  }
 }
 
 void moveLeftBackward(){
-  Serial.println(delta_right_backwards);
-  if(left_femur > left_femur_left){
-    // keep moving right
-    left_femur -= delta_left_backwards;
+  Serial.print("Left Femur: ");
+  Serial.print(left_femur);
+  Serial.println();
+  Serial.print("Left Tibia: ");
+  Serial.print(left_tibia);
+  Serial.println();
+  if(left_femur < left_femur_left){
+    // keep moving left
+    left_femur += delta_left_backwards;
     left_femur_servo.write(left_femur);
   }
+//  else{
+//    left_moving = true;
+//  }
 }
 
 // moving backwards...not forwards
