@@ -16,7 +16,7 @@ class Turtle(object):
         # Set up limits to look for (filler values)
         self.distanceLimit = 100 # limit before something is 'seen' in that direction
         self.seeLight = 100
-        self.heatLimit = 80 # if temperature sensor is above this value, look for shade
+        self.heatLimit = 30 # if temperature sensor is above this value, look for shade
         self.moistureLimit = 100 # if moisture is too low, change eye color
         
         # Set up decision points to control behavior
@@ -29,6 +29,16 @@ class Turtle(object):
         self.timeStarted = time.time() # will let us figure out if it is day or night
         self.currentHour = 0
 
+    def getFirstRead(self):
+        """ Gets the first read and sets that as calibration things """
+        if(aSD.inWaiting()&gt;0):
+            dataRead = aSD.readline()
+            dataList = dataRead.split(',')
+            for index in range(len(dataList)):
+                dataList[index] = float(dataList[index])
+            # Set up calibration for what is defined as shade vs light
+            self.seeLight = (dataList[0]+dataList[1])/2 - 100
+        
     def run(self):
         """ Loop that runs the decision algorithm """
         while True:
@@ -122,11 +132,11 @@ class Turtle(object):
 
     def goToShade(self):
         """ Travels to the shade and stops if fully in shade.
-            Returns 'forward', 'right', 'left', or 'stop' """
+            Returns forward (0), right (1), left (2), or stop (3) """
         if self.inLight == 3: # stop if in shade
-            return 'stop'
+            return 3
         elif self.inLight == 1: # try to turn around if there is shade behind
-            return 'right'
+            return 1
         else:
             return self.checkForward()
 
@@ -140,19 +150,20 @@ class Turtle(object):
             return self.checkForward()
         
     def checkFoward(self):
-        """ Checks to see which way it can go and returns 'forward', 'right', or 'left' """
+        """ Checks to see which way it can go and returns
+            forward (0), right (1), or left (2) """
         if self.IR['front'] < self.distanceLimit:
-            return 'forward'
+            return 0
         else: # check which direction we should turn
             return checkTurns()
 
     def checkTurns(self):
-        """ Checks which turn it should make. Returns 'right' or 'left' """
+        """ Checks which turn it should make. Returns right (1) or left (2) """
         if self.IR['right'] < self.distanceLimit and (self.IR['right'] - self.IR['left']) < 25:
             # checks to see if there is anything to the right. If there is not,
             #  and there is nothing significantly closer to the right than the left,
             #  the turtle turns right
-            return 'right'
+            return 1
         else:
             # goes left if it can't go forward or right. Maybe change later?
-            return 'left'
+            return 2
