@@ -1,12 +1,14 @@
 import time
+import Logger
+import serial
 
 class Turtle(object):
     """ Creates the overarching Turtle class, which controlls the turtle """
 
     def __init__(self):
         """ Imports serial and creates the arduino """
-        aSD = serial.Serial('/dev/ttyACM0', 9600) # aSD: arduinoSerialData, check port number
-
+        self.aSD = serial.Serial('/dev/ttyACM0', 9600) # aSD: arduinoSerialData, check port number
+        self.log = Logger.Logger()
         # Initialize all the sensors
         self.LS = {'front':0, 'back':0} # Light sensor dictionary
         self.IR = {'front':0, 'right':0, 'left':0} # IR sensor dictionary
@@ -31,19 +33,22 @@ class Turtle(object):
 
     def getFirstRead(self):
         """ Gets the first read and sets that as calibration things """
-        if(aSD.inWaiting()&gt;0):
-            dataRead = aSD.readline()
+        if(self.aSD.inWaiting()>0):
+            dataRead = self.aSD.readline()
             dataList = dataRead.split(',')
             for index in range(len(dataList)):
                 dataList[index] = float(dataList[index])
             # Set up calibration for what is defined as shade vs light
             self.seeLight = (dataList[0]+dataList[1])/2 - 100
+            
+            # Calibrate what is defined as near. Average the readings of all 3 sensors and add 100.
+            self.distanceLimit = (dataList[2]+dataList[3]+dataList[4])/3 +100
         
     def run(self):
         """ Loop that runs the decision algorithm """
         while True:
-            if(aSD.inWaiting()&gt;0):
-                dataRead = aSD.readline()
+            if(self.aSD.inWaiting()>0):
+                dataRead = self.aSD.readline()
                 self.assignData(dataRead)
 
                 # Check to see if we need to go to shade
@@ -167,3 +172,15 @@ class Turtle(object):
         else:
             # goes left if it can't go forward or right. Maybe change later?
             return 2
+
+    def logData(self):
+        """ Logs the data into a csv file """
+        dataToLog = [self.LS['front'], self.LS['back'],
+                     self.IR['front'], self.IR['right'], self.IR['left'],
+                     self.TS, self.SM]
+        self.log.log_data(dataToLog)
+
+if __name__ == "__main__":
+    t = Turtle()
+    t.getFirstRead()
+    t.run
