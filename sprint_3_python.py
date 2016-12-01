@@ -33,42 +33,48 @@ class Turtle(object):
 
     def getFirstRead(self):
         """ Gets the first read and sets that as calibration things """
-        if(self.aSD.inWaiting()>0):
-            dataRead = self.aSD.readline()
-            dataList = dataRead.split(',')
-            for index in range(len(dataList)):
-                dataList[index] = float(dataList[index])
-            # Set up calibration for what is defined as shade vs light
-            self.seeLight = (dataList[0]+dataList[1])/2 - 100
-            
-            # Calibrate what is defined as near. Average the readings of all 3 sensors and add 100.
-            self.distanceLimit = (dataList[2]+dataList[3]+dataList[4])/3 +100
+        while True:
+            if(self.aSD.inWaiting()>0):
+                dataRead = self.aSD.readline()
+                dataList = dataRead.split(',')
+                if len(dataList) == 7:
+                    for index in range(len(dataList)):
+                        dataList[index] = float(dataList[index])
+                    # Set up calibration for what is defined as shade vs light
+                    self.seeLight = (dataList[0]+dataList[1])/2 - 100
+                    
+                    # Calibrate what is defined as near. Average the readings of all 3 sensors and add 100.
+                    self.distanceLimit = (dataList[2]+dataList[3]+dataList[4])/3 +100
+                    print(self.seeLight, self.distanceLimit)
+                    break
         
     def run(self):
         """ Loop that runs the decision algorithm """
         while True:
             if(self.aSD.inWaiting()>0):
                 dataRead = self.aSD.readline()
-                self.assignData(dataRead)
+                if len(dataRead.split(',')) == 7:
+                    self.assignData(dataRead)
+                    self.logData()
 
-                # Check to see if we need to go to shade
-                enoughLight = self.checkHourlyLight()
-                tooHot = self.TS > self.heatLimit
+                    # Check to see if we need to go to shade
+                    enoughLight = self.checkHourlyLight()
+                    tooHot = self.TS > self.heatLimit
 
-                if enoughLight or tooHot:
-                    self.seekShade = True
-                else:
-                    self.seekShade = False
+                    if enoughLight or tooHot:
+                        self.seekShade = True
+                    else:
+                        self.seekShade = False
 
-                if self.seekShade:
-                    arduinoSerialData.write(self.goToShade())
-                else:
-                    arduinoSerialData.write(self.goToLight())
+                    if self.seekShade:
+                        self.aSD.write(str(self.goToShade()))
+                    else:
+                        self.aSD.write(str(self.goToLight()))
 
-                if self.SM < self.moistureLimit:
-                    eyesYellow = True
-                else:
-                    eyesYellow = False
+                    if self.SM < self.moistureLimit:
+                        eyesYellow = True
+                    else:
+                        eyesYellow = False
 
     def assignData(self, dataRead):
         """ Assigns the data to the proper variables and converts it to floats.
@@ -143,8 +149,8 @@ class Turtle(object):
         elif self.inLight == 1: # try to turn around if there is shade behind
             return 1
         else:
-            return self.checkForward()
-
+            return self.checkFoward()
+        
     def goToLight(self):
         """ Wanders around in the light, turns if it gets into shade. """
         if self.inLight == 2:
@@ -160,8 +166,8 @@ class Turtle(object):
         if self.IR['front'] < self.distanceLimit:
             return 0
         else: # check which direction we should turn
-            return checkTurns()
-
+            return self.checkTurns()
+        
     def checkTurns(self):
         """ Checks which turn it should make. Returns right (1) or left (2) """
         if self.IR['right'] < self.distanceLimit and (self.IR['right'] - self.IR['left']) < 25:
@@ -172,7 +178,7 @@ class Turtle(object):
         else:
             # goes left if it can't go forward or right. Maybe change later?
             return 2
-
+        
     def logData(self):
         """ Logs the data into a csv file """
         dataToLog = [self.LS['front'], self.LS['back'],
@@ -182,5 +188,6 @@ class Turtle(object):
 
 if __name__ == "__main__":
     t = Turtle()
+    time.sleep(3)
     t.getFirstRead()
-    t.run
+    t.run()
