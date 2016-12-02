@@ -14,7 +14,7 @@
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-Adafruit_DCMotor *leg1 = AFMS.getMotor(1), *leg2 = AFMS.getMotor(2);
+Adafruit_DCMotor *leg1 = AFMS.getMotor(4), *leg2 = AFMS.getMotor(3);
 
 
 // Constant values and pins.
@@ -52,6 +52,9 @@ void setup() {
 
   Serial.begin(9600); // start Serial to see values
   AFMS.begin();
+  leg1->setSpeed(50);
+  leg2->setSpeed(50);
+  
   leg1->run(RELEASE);
   leg2->run(RELEASE);
 
@@ -77,9 +80,8 @@ void loop() {
   // Read the light sensors
   readSensors();
   directions = checkChoice();
-  Serial.println(directions);
   moveTurtle(directions);
-  delay(1000);
+  delay(100);
 }
 
 void testRun() {
@@ -162,22 +164,26 @@ void moveTurtle(int whichWay) {
 }
 
 void moveForward() {
-  // Not yet implemented
+  leg1->run(FORWARD);
+  leg2->run(FORWARD);
   Serial.println("Forward");
 }
 
 void turnLeft() {
-  // Not yet implemented
+  leg1->run(RELEASE);
+  leg2->run(FORWARD);
   Serial.println("Left");
 }
 
 void turnRight() {
-  // Not yet implemented
+  leg1->run(FORWARD);
+  leg2->run(RELEASE);
   Serial.println("Right");
 }
 
 void stopMoving() {
-  // Not yet implemented
+  leg1->run(RELEASE);
+  leg2->run(RELEASE);
   Serial.println("Stop");
 }
 
