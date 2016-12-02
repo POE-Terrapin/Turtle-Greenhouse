@@ -34,7 +34,7 @@ const int Eye1 = 8, Eye2 = 9;
 
 // IR sensor pins on the multiplexer
 //  f_ir indicates 'front IR', r_ir is 'right IR', l_ir is 'left IR'
-const int f_ir = 2, r_ir = 3, l_ir=4;
+const int f_ir = 2, r_ir = 3, l_ir=3;
 
 // Temperature and moisture sensors
 const int ts = 5, ms = 6;
@@ -77,7 +77,9 @@ void loop() {
   // Read the light sensors
   readSensors();
   directions = checkChoice();
+  Serial.println(directions);
   moveTurtle(directions);
+  delay(1000);
 }
 
 void testRun() {
@@ -110,8 +112,10 @@ void readSensors() {
   r_value = readMultiplexer(r_ir);
   l_value = readMultiplexer(l_ir);
   
-  int ts_value = readMultiplexer(ts);
-  int ms_value = readMultiplexer(ms);
+  // int ts_value = readMultiplexer(ts);
+  // int ms_value = readMultiplexer(ms);
+  int ts_value = 25;
+  int ms_value = 50;
 
   serialWrite(LS0val);
   serialWrite(LS2val);
@@ -135,7 +139,7 @@ int checkChoice() {
   // If Serial is not available, returns directions
   //  so that it continues to follow the same path.
   if(Serial.available()) {
-    return Serial.read();
+    return Serial.read() - 48;
   }
   else {
     return directions;
@@ -159,18 +163,22 @@ void moveTurtle(int whichWay) {
 
 void moveForward() {
   // Not yet implemented
+  Serial.println("Forward");
 }
 
 void turnLeft() {
   // Not yet implemented
+  Serial.println("Left");
 }
 
 void turnRight() {
   // Not yet implemented
+  Serial.println("Right");
 }
 
 void stopMoving() {
   // Not yet implemented
+  Serial.println("Stop");
 }
 
 // Returns the value of the requested pin from the multiplexer

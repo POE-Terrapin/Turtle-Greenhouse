@@ -37,25 +37,27 @@ class Turtle(object):
             if(self.aSD.inWaiting()>0):
                 dataRead = self.aSD.readline()
                 dataList = dataRead.split(',')
-                if len(dataList) == 7:
-                    for index in range(len(dataList)):
-                        dataList[index] = float(dataList[index])
-                    # Set up calibration for what is defined as shade vs light
-                    self.seeLight = (dataList[0]+dataList[1])/2 - 100
+                if dataList[0] != '' and len(dataList) == 7:
+                        for index in range(len(dataList)):
+                            dataList[index] = float(dataList[index])
+                        # Set up calibration for what is defined as shade vs light
+                        self.seeLight = (dataList[0]+dataList[1])/2 - 100
                     
-                    # Calibrate what is defined as near. Average the readings of all 3 sensors and add 100.
-                    self.distanceLimit = (dataList[2]+dataList[3]+dataList[4])/3 +100
-                    print(self.seeLight, self.distanceLimit)
-                    break
+                        # Calibrate what is defined as near. Average the readings of all 3 sensors and add 100.
+                        self.distanceLimit = (dataList[2]+dataList[3]+dataList[4])/3 +100
+                        print(self.seeLight, self.distanceLimit)
+                        break
         
     def run(self):
         """ Loop that runs the decision algorithm """
         while True:
             if(self.aSD.inWaiting()>0):
                 dataRead = self.aSD.readline()
-                if len(dataRead.split(',')) == 7:
-                    self.assignData(dataRead)
+                dataList = dataRead.split(',')
+                if dataList[0] != '' and len(dataList) == 7: # makes sure it is the full set of data to read
+                    self.assignData(dataList)
                     self.logData()
+                    print(dataRead)
 
                     # Check to see if we need to go to shade
                     enoughLight = self.checkHourlyLight()
@@ -67,19 +69,24 @@ class Turtle(object):
                         self.seekShade = False
 
                     if self.seekShade:
-                        self.aSD.write(str(self.goToShade()))
+                        direction = self.goToShade()
                     else:
-                        self.aSD.write(str(self.goToLight()))
+                        direction = self.goToLight()
+                        
+                    print(direction)
+                    self.aSD.write(str(direction))
 
                     if self.SM < self.moistureLimit:
                         eyesYellow = True
                     else:
                         eyesYellow = False
 
-    def assignData(self, dataRead):
+                else:
+                    print(dataRead)
+
+    def assignData(self, dataList):
         """ Assigns the data to the proper variables and converts it to floats.
             Data is received as: 'FLS,BLS,FIR,RIR,LIR,TS,SM'. """
-        dataList = dataRead.split(',')
         for index in range(len(dataList)):
             dataList[index] = float(dataList[index])
         self.LS['front'], self.LS['back'] = dataList[0], dataList[1]
@@ -126,7 +133,7 @@ class Turtle(object):
 
         # If it has been a minute since the last average was taken, take it
         if(self.lastLightUpdate - time.time()) >= 60: # if it has been 1 minute, update the timeSpentInLight
-            self.timeSpentInLight += self.minuteLightAverage/60 # assuming one check per second
+            self.timeSpentInLight += self.minuteLightAverage/600 # assuming ten checks per second
             self.minuteLightAverage = 0
             self.lastLightUpdate = time.time()
 
@@ -137,9 +144,8 @@ class Turtle(object):
 
         if lightQuota < self.timeSpentInLight:
             self.HLQ['met'] = True
-            return self.HLQ
-        else:
-            return self.HLQ
+            
+        return self.HLQ['met']
 
     def goToShade(self):
         """ Travels to the shade and stops if fully in shade.
@@ -160,7 +166,7 @@ class Turtle(object):
             # otherwise, go wherever
             return self.checkForward()
         
-    def checkFoward(self):
+    def checkForward(self):
         """ Checks to see which way it can go and returns
             forward (0), right (1), or left (2) """
         if self.IR['front'] < self.distanceLimit:
