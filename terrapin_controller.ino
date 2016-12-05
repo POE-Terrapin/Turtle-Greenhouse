@@ -141,7 +141,17 @@ int checkChoice() {
   // If Serial is not available, returns directions
   //  so that it continues to follow the same path.
   if(Serial.available()) {
-    return Serial.read() - 48;
+     int choice = Serial.read();
+     if(choice > 52) { 
+        digitalWrite(Eye1, LOW);
+        digitalWrite(Eye2, LOW);
+        choice = choice - 4;
+     }
+     else {
+        digitalWrite(Eye1, HIGH);
+        digitalWrite(Eye2, HIGH);
+     }
+    return choice - 48;
   }
   else {
     return directions;
