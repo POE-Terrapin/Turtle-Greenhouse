@@ -72,15 +72,17 @@ class Turtle(object):
                         direction = self.goToShade()
                     else:
                         direction = self.goToLight()
-                        
-                    print(direction)
-                    self.aSD.write(str(direction))
-
+                    
                     if self.SM < self.moistureLimit:
                         eyesYellow = True
                     else:
                         eyesYellow = False
-
+                        
+                    print(direction)
+                    if eyesYellow:
+                        direction += 4 # Adds 4 so that the arduino knows to turn the eyes yellow
+                    self.aSD.write(str(direction))
+                                       
                 else:
                     print(dataRead)
 
