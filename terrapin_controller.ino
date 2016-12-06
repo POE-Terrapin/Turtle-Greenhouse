@@ -16,6 +16,7 @@
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *leg1 = AFMS.getMotor(4), *leg2 = AFMS.getMotor(3);
 
+// Servos on pins 6 and 10
 
 // Constant values and pins.
 
@@ -31,10 +32,11 @@ const int multi_pin = A0; // pin to read from/output pin
 
 // Eye1 and Eye2 power LEDs.
 const int Eye1 = 8, Eye2 = 9;
+const int eye_g = 12, eye_b = 11, eye_r = 7;
 
 // IR sensor pins on the multiplexer
 //  f_ir indicates 'front IR', r_ir is 'right IR', l_ir is 'left IR'
-const int f_ir = 2, r_ir = 3, l_ir=3;
+const int f_ir = 2, r_ir = 3, l_ir=4;
 
 // Temperature and moisture sensors
 const int ts = 5, ms = 6;
