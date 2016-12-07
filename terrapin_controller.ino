@@ -30,8 +30,7 @@ const int LS0 = 0, LS2 = 1;// LS1 = A1, LS3 = A3;
 const int s[3] = {2, 3, 4};
 const int multi_pin = A0; // pin to read from/output pin
 
-// Eye1 and Eye2 power LEDs.
-const int Eye1 = 8, Eye2 = 9;
+// RGB LEDs have color controlled by following pins
 const int eye_g = 12, eye_b = 11, eye_r = 7;
 
 // IR sensor pins on the multiplexer
@@ -67,10 +66,10 @@ void setup() {
   pinMode(s[2], OUTPUT);
 
   // Turn on both of the LEDs for the eyes.
-  pinMode(Eye1, OUTPUT);
-  digitalWrite(Eye1, HIGH);
-  pinMode(Eye2, OUTPUT);
-  digitalWrite(Eye2, HIGH);
+  pinMode(eye_g, OUTPUT);
+  pinMode(eye_r, OUTPUT);
+  pinMode(eye_b, OUTPUT);
+  setColor(0, 255, 0);  // green
 
   // Start up turtle without anything around the head so that initial values are
   //  useable for calibrating
@@ -145,13 +144,11 @@ int checkChoice() {
   if(Serial.available()) {
      int choice = Serial.read();
      if(choice > 52) { 
-        digitalWrite(Eye1, LOW);
-        digitalWrite(Eye2, LOW);
+        setColor(255, 255, 0);// turn eyes yellow
         choice = choice - 4;
      }
      else {
-        digitalWrite(Eye1, HIGH);
-        digitalWrite(Eye2, HIGH);
+        setColor(0, 255, 0);  // turn eyes green
      }
     return choice - 48;
   }
@@ -197,6 +194,13 @@ void stopMoving() {
   leg1->run(RELEASE);
   leg2->run(RELEASE);
   Serial.println("Stop");
+}
+
+void setColor(int red, int green, int blue)
+{
+  analogWrite(eye_r, red);
+  analogWrite(eye_g, green);
+  analogWrite(eye_b, blue);  
 }
 
 // Returns the value of the requested pin from the multiplexer
