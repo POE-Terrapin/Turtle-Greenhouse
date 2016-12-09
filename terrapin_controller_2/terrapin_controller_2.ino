@@ -202,6 +202,36 @@ void moveTurtle(int whichWay) {
   }
 }
 
+void setColor(int red, int green, int blue)
+{
+  analogWrite(eye_r, red);
+  analogWrite(eye_g, green);
+  analogWrite(eye_b, blue);  
+}
+
+// Returns the value of the requested pin from the multiplexer
+int readMultiplexer(int pin_num) {
+  digitalWrite(s[0], (pin_num & 1) ? HIGH : LOW);
+  digitalWrite(s[1], (pin_num & 2) ? HIGH : LOW);
+  digitalWrite(s[2], (pin_num & 4) ? HIGH : LOW);
+  return analogRead(multi_pin);
+}
+
+// LEG MOVEMENT CODE
+bool ground(char side) {
+  switch (side) {
+    case 'r':
+      return !digitalRead(GROUND_R_PIN);
+    case 'l':
+      return !digitalRead(GROUND_L_PIN);
+  }
+  return 0;
+}
+
+float time_sec() {
+  return millis() / 1000.;
+}
+
 void moveForward() {
   if (digitalRead(ON_OFF_PIN) == 1) {
     //Stop, don't move.
@@ -209,7 +239,6 @@ void moveForward() {
     legL->run(RELEASE);
     legR->run(RELEASE);
 
-    Serial.println("OFF");
     delay(1000);
   } else {
     bool gl = ground('l');
@@ -249,9 +278,7 @@ void moveForward() {
 
     if (next != state) {
       float now = time_sec();
-      Serial.println(now - last_transition);
       last_transition = now;
-      Serial.print(state); Serial.print("-->"); Serial.println(next);
       state = next;
     }
     delay(100);
@@ -262,14 +289,99 @@ void moveForward() {
 }
 
 void turnLeft() {
-  legL->run(RELEASE);
-  legR->run(FORWARD);
+  if (digitalRead(ON_OFF_PIN) == 1) {
+    //Stop, don't move.
+
+    legL->run(RELEASE);
+    legR->run(RELEASE);
+
+    delay(1000);
+  } else {
+    bool gl = ground('l');
+    bool gr = ground('r');
+    int next = state;
+
+    switch (state) {
+      case LEFT_MOVE:
+        legL->run(FORWARD);
+        legR->run(RELEASE);
+        if (!gl) {
+          next = LEFT_UP;
+        }
+        break;
+      case LEFT_UP:
+        legL->run(FORWARD);
+        legR->run(RELEASE);
+        if (gl) {
+          next = RIGHT_MOVE;
+        }
+        break;
+      case RIGHT_MOVE:
+        legL->run(RELEASE);
+        legR->run(FORWARD);
+        if (!gr) {
+          next = RIGHT_MOVE;
+        }
+        break;
+    }
+
+    if (next != state) {
+      float now = time_sec();
+      last_transition = now;
+      state = next;
+    }
+    delay(100);
+  }
+
+  gyro.read();
   Serial.println("Left");
 }
 
 void turnRight() {
-  legL->run(FORWARD);
-  legR->run(RELEASE);
+  if (digitalRead(ON_OFF_PIN) == 1) {
+    //Stop, don't move.
+
+    legL->run(RELEASE);
+    legR->run(RELEASE);
+
+    delay(1000);
+  } else {
+    bool gl = ground('l');
+    bool gr = ground('r');
+    int next = state;
+
+    switch (state) {
+      case LEFT_MOVE:
+        legL->run(FORWARD);
+        legR->run(RELEASE);
+        if (!gl) {
+          next = LEFT_MOVE;
+        }
+        break;
+      case RIGHT_MOVE:
+        legL->run(RELEASE);
+        legR->run(FORWARD);
+        if (!gr) {
+          next = RIGHT_UP;
+        }
+        break;
+      case RIGHT_UP:
+        legL->run(RELEASE);
+        legR->run(FORWARD);
+        if (gr) {
+          next = LEFT_MOVE;
+        }
+        break;
+    }
+
+    if (next != state) {
+      float now = time_sec();
+      last_transition = now;
+      state = next;
+    }
+    delay(100);
+  }
+  gyro.read();
   Serial.println("Right");
 }
 
@@ -278,34 +390,3 @@ void stopMoving() {
   legR->run(RELEASE);
   Serial.println("Stop");
 }
-
-void setColor(int red, int green, int blue)
-{
-  analogWrite(eye_r, red);
-  analogWrite(eye_g, green);
-  analogWrite(eye_b, blue);  
-}
-
-// Returns the value of the requested pin from the multiplexer
-int readMultiplexer(int pin_num) {
-  digitalWrite(s[0], (pin_num & 1) ? HIGH : LOW);
-  digitalWrite(s[1], (pin_num & 2) ? HIGH : LOW);
-  digitalWrite(s[2], (pin_num & 4) ? HIGH : LOW);
-  return analogRead(multi_pin);
-}
-
-// LEG MOVEMENT CODE
-bool ground(char side) {
-  switch (side) {
-    case 'r':
-      return !digitalRead(GROUND_R_PIN);
-    case 'l':
-      return !digitalRead(GROUND_L_PIN);
-  }
-  return 0;
-}
-
-float time_sec() {
-  return millis() / 1000.;
-}
-
