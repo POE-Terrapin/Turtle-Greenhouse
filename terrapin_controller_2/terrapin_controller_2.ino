@@ -2,9 +2,8 @@
    Terrapin Project
    PoE Fall 2016
    Zarin Bhuiyan, Jamie Cho, Kaitlyn Keil, Lauren Pudvan, Katya Soltan
-   Sketch Model Code
-   Sprint 3
-   Started 11/30
+   Final Demo Code
+   Started 12/14
 */
 
 #include <Wire.h>
@@ -12,8 +11,8 @@
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 #include <Servo.h>
 #include "sensors.h"
-#include "gyro.h"
 #include "utils.h"
+
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -21,36 +20,23 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor* motor_l = AFMS.getMotor(4);
 Adafruit_DCMotor* motor_r = AFMS.getMotor(3);
 
+const int FULL_SPEED = 150;
+const int HALF_SPEED = FULL_SPEED / 2;
+
+// servos
 Servo servo_l, servo_r;
 
 int servo_r_pos = 0;
 int servo_r_dir = 1;
 const int D_THETA = 20;
 
-// Servos on pins 6 and 10
-
-// Constant values and pins.
-
-const int FULL_SPEED = 150;
-const int HALF_SPEED = FULL_SPEED / 2;
-
-// Values for leg movement and sensors
-const int GROUND_L_PIN = 5;// 0 when ON, 1 when off
-const int GROUND_R_PIN = 6; // 0 when ON, 1 when off
-const int ON_OFF_PIN = 8; // 0 when ON, 1 when OFF
-
 const int SERVO_L_PIN = 9;
 const int SERVO_R_PIN = 10;
 
-enum {LEFT_MOVE, LEFT_UP, RIGHT_MOVE, RIGHT_UP};
-enum {STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT};
-
+// behaviors and movement
 int behavior = STOP;
 int state;
 float last_transition;
-
-Gyro gyro(A1, A2, A3);
-
 
 // RGB LEDs have color controlled by following pins
 const int eye_g = 12, eye_b = 11, eye_r = 7;
@@ -61,11 +47,6 @@ void setup() {
   Serial.begin(9600); // start Serial for RPi
 
   AFMS.begin();
-  gyro.setup();
-
-  pinMode(GROUND_L_PIN, INPUT_PULLUP);
-  pinMode(GROUND_R_PIN, INPUT_PULLUP);
-  pinMode(ON_OFF_PIN, INPUT_PULLUP);
 
   pinMode(SERVO_L_PIN, OUTPUT);
   pinMode(SERVO_R_PIN, OUTPUT);
@@ -81,7 +62,6 @@ void setup() {
 
   bool gl = ground('l');
   bool gr = ground('r');
-  bool r = !digitalRead(GROUND_R_PIN);
 
   if (gl ^ gr) {
     state = gl ? RIGHT_MOVE : LEFT_MOVE;
@@ -104,15 +84,17 @@ void setup() {
 }
 
 void loop() {
-  // Read the light sensors
+  // Read all sensors
   readSensors();
-  if (digitalRead(ON_OFF_PIN) == 1) {
+
+  if (!on()) {
     behavior = STOP;
     Serial.println("OFF");
     delay(1000);
+  } else {
+    behavior = checkChoice();
+    moveTurtle(behavior);
   }
-  behavior = checkChoice();
-  moveTurtle(behavior);
   report();
   delay(100);
 }
@@ -126,18 +108,15 @@ int checkChoice() {
 
   if (Serial.available()) {
     int choice = Serial.read();
-    if (choice > 52) {
-      setColor(255, 255, 0);// turn eyes yellow
-      choice = choice - 4;
+    if (choice > '4') {
+      setColor(255, 255, 0);// turn eyes yellow - warning
     }
     else {
       setColor(0, 255, 0);  // turn eyes green
+      return choice - '0';
     }
-    return choice - 48;
   }
-  else {
-    return behavior;
-  }
+  return behavior;
 }
 
 void moveTurtle(int whichWay) {
@@ -174,24 +153,13 @@ void setColor(int red, int green, int blue)
 
 // Returns the value of the requested pin from the multiplexer
 
-// LEG MOVEMENT CODE
-bool ground(char side) {
-  switch (side) {
-    case 'r':
-      return !digitalRead(GROUND_R_PIN);
-    case 'l':
-      return !digitalRead(GROUND_L_PIN);
-  }
-  return 0;
-}
-
 float time_sec() {
   return millis() / 1000.;
 }
 
 int go_forward(int state) {
-  bool gl = ground('l');
-  bool gr = ground('r');
+  bool gl = !contact.get(0);
+  bool gr = !contact.get(1);
 
   int next = state;
   servo_l.write(0);
@@ -298,7 +266,7 @@ int turn_left(int state) {
 }
 
 void turnRight() {
-  if (digitalRead(ON_OFF_PIN) == 1) {
+  if (!on()) {
     //Stop, don't move.
 
     motor_l->run(RELEASE);
@@ -341,7 +309,6 @@ void turnRight() {
     }
     delay(100);
   }
-  gyro.read();
   Serial.println("Right");
 }
 
@@ -351,6 +318,5 @@ void stopMoving() {
 }
 
 void report() {
-  
-  serialWrite(LS0val, LS2val, f_value, r_value, l_value, ts_value, ms_value, behavior);
+  serialWrite(LS0val, LS2val, f_value, r_value, l_value, ts_value, ms_value, behavior, gyro.x, gyro.y, gyro.z);
 }
