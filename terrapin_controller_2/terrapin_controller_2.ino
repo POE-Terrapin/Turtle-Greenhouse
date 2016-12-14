@@ -23,9 +23,9 @@ Adafruit_DCMotor* legR = AFMS.getMotor(3);
 // Constant values and pins.
 
 // Values for leg movement and sensors
-const int GROUND_L_PIN = 11;// 0 when ON, 1 when off
-const int GROUND_R_PIN = 10; // 0 when ON, 1 when off
-const int ON_OFF_PIN = 9; // 0 when ON, 1 when OFF
+const int GROUND_L_PIN = 5;// 0 when ON, 1 when off
+const int GROUND_R_PIN = 6; // 0 when ON, 1 when off
+const int ON_OFF_PIN = 8; // 0 when ON, 1 when OFF
 
 enum {LEFT_MOVE, LEFT_UP, RIGHT_MOVE, RIGHT_UP};
 int state;
@@ -63,8 +63,7 @@ int directions = 0;
 
 void setup() {
   Serial.begin(9600); // start Serial for RPi
-
-  Serial.begin(9600); // start Serial to see values
+  
   AFMS.begin();
   gyro.setup();
 

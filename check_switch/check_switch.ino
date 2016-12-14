@@ -6,9 +6,9 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor* motor_l = AFMS.getMotor(4);
 Adafruit_DCMotor* motor_r = AFMS.getMotor(3);
 
-const int GROUND_L_PIN = 11;// 0 when ON, 1 when off
-const int GROUND_R_PIN = 10; // 0 when ON, 1 when off
-const int ON_OFF_PIN = 9; // 0 when ON, 1 when OFF
+const int GROUND_L_PIN = 5;// 0 when ON, 1 when off
+const int GROUND_R_PIN = 6; // 0 when ON, 1 when off
+const int ON_OFF_PIN = 8; // 0 when ON, 1 when OFF
 
 enum {LEFT_MOVE, LEFT_UP, RIGHT_MOVE, RIGHT_UP};
 int state;
@@ -78,13 +78,15 @@ void loop() {
         motor_r->run(RELEASE);
         if (!gl) {
           next = LEFT_UP;
+          motor_r->setSpeed(50);
         }
         break;
       case LEFT_UP:
         motor_l->run(FORWARD);
-        motor_r->run(RELEASE);
+        motor_r->run(FORWARD);
         if (gl) {
           next = RIGHT_MOVE;
+          motor_r->setSpeed(100);
         }
         break;
       case RIGHT_MOVE:
@@ -92,13 +94,17 @@ void loop() {
         motor_r->run(FORWARD);
         if (!gr) {
           next = RIGHT_UP;
+          motor_l->setSpeed(50);
         }
         break;
       case RIGHT_UP:
-        motor_l->run(RELEASE);
+        motor_l->run(FORWARD);
         motor_r->run(FORWARD);
         if (gr) {
+
+          motor_l->setSpeed(100);
           next = LEFT_MOVE;
+
         }
         break;
     }
