@@ -11,71 +11,73 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 #include <Servo.h>
+#include "sensors.h"
 #include "gyro.h"
+#include "utils.h"
 
 // Create the motor shield object with the default I2C address
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-Adafruit_DCMotor* legL = AFMS.getMotor(4);
-Adafruit_DCMotor* legR = AFMS.getMotor(3);
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
+
+Adafruit_DCMotor* motor_l = AFMS.getMotor(4);
+Adafruit_DCMotor* motor_r = AFMS.getMotor(3);
+
+Servo servo_l, servo_r;
+
+int servo_r_pos = 0;
+int servo_r_dir = 1;
+const int D_THETA = 20;
 
 // Servos on pins 6 and 10
 
 // Constant values and pins.
+
+const int FULL_SPEED = 150;
+const int HALF_SPEED = FULL_SPEED / 2;
 
 // Values for leg movement and sensors
 const int GROUND_L_PIN = 5;// 0 when ON, 1 when off
 const int GROUND_R_PIN = 6; // 0 when ON, 1 when off
 const int ON_OFF_PIN = 8; // 0 when ON, 1 when OFF
 
+const int SERVO_L_PIN = 9;
+const int SERVO_R_PIN = 10;
+
 enum {LEFT_MOVE, LEFT_UP, RIGHT_MOVE, RIGHT_UP};
+enum {STOP, GO_FORWARD, TURN_LEFT, TURN_RIGHT};
+
+int behavior = STOP;
 int state;
 float last_transition;
 
 Gyro gyro(A1, A2, A3);
 
-// Set up the pins for the different sensors
-//  LS stands for Light Sensor. Numbers increase
-//  clockwise from the front: LS0 is front, LS1 is
-//  at 3 o'clock (from top view), LS2 is in back, etc.
-const int LS0 = 0, LS2 = 1;// LS1 = A1, LS3 = A3;
-
-// Set up multiplexer pins
-const int s[3] = {2, 3, 4};
-const int multi_pin = A0; // pin to read from/output pin
 
 // RGB LEDs have color controlled by following pins
 const int eye_g = 12, eye_b = 11, eye_r = 7;
 
-// IR sensor pins on the multiplexer
-//  f_ir indicates 'front IR', r_ir is 'right IR', l_ir is 'left IR'
-const int f_ir = 2, r_ir = 3, l_ir=4;
-
-// Temperature and moisture sensors
-const int ts = 5, ms = 6;
-
-// Create the variables to store sensor values. Each
-//  corresponds with the matching name.
-int LS0val = 0, LS1val = 0, LS2val = 0, LS3val = 0;
-int f_value = 0, r_value = 0, l_value = 0;
-
 // Create a variable to keep track of what direction the turtle is moving (straight=0, right turn=1, left turn = 2)
-int directions = 0;
 
 void setup() {
   Serial.begin(9600); // start Serial for RPi
-  
+
   AFMS.begin();
   gyro.setup();
 
   pinMode(GROUND_L_PIN, INPUT_PULLUP);
   pinMode(GROUND_R_PIN, INPUT_PULLUP);
   pinMode(ON_OFF_PIN, INPUT_PULLUP);
-  
-  legL->setSpeed(100);
-  legR->setSpeed(100);
-  
-  legL->run(RELEASE);
-  legR->run(RELEASE);
+
+  pinMode(SERVO_L_PIN, OUTPUT);
+  pinMode(SERVO_R_PIN, OUTPUT);
+
+  servo_l.attach(SERVO_L_PIN);
+  servo_r.attach(SERVO_R_PIN);
+
+  motor_l->setSpeed(HALF_SPEED);
+  motor_r->setSpeed(HALF_SPEED);
+
+  motor_l->run(RELEASE);
+  motor_r->run(RELEASE);
 
   bool gl = ground('l');
   bool gr = ground('r');
@@ -88,11 +90,6 @@ void setup() {
     state = RIGHT_MOVE; // pick a motion
   }
   last_transition = time_sec();
-
-  // Set up multiplexer pins
-  pinMode(s[0], OUTPUT);
-  pinMode(s[1], OUTPUT);
-  pinMode(s[2], OUTPUT);
 
   // Turn on both of the LEDs for the eyes.
   pinMode(eye_g, OUTPUT);
@@ -109,59 +106,15 @@ void setup() {
 void loop() {
   // Read the light sensors
   readSensors();
-  directions = checkChoice();
-  moveTurtle(directions);
+  if (digitalRead(ON_OFF_PIN) == 1) {
+    behavior = STOP;
+    Serial.println("OFF");
+    delay(1000);
+  }
+  behavior = checkChoice();
+  moveTurtle(behavior);
+  report();
   delay(100);
-}
-
-void testRun() {
- // Sends rubbish data to the RPi for testing
- LS0val = 400;
- LS2val = 400;
- 
- f_value = 250;
- r_value = 250;
- l_value = 250;
-  
- int ts_value = 25;
- int ms_value = 50;
-
- serialWrite(LS0val);
- serialWrite(LS2val);
- serialWrite(f_value);
- serialWrite(r_value);
- serialWrite(l_value);
- serialWrite(ts_value);
- Serial.println(ms_value);
-}
-
-void readSensors() {
-  // Reads the sensors and writes them to Serial
-  LS0val = readMultiplexer(LS0);
-  LS2val = readMultiplexer(LS2);
-  
-  f_value = readMultiplexer(f_ir);
-  r_value = readMultiplexer(r_ir);
-  l_value = readMultiplexer(l_ir);
-  
-  // int ts_value = readMultiplexer(ts);
-  // int ms_value = readMultiplexer(ms);
-  int ts_value = 25;
-  int ms_value = 50;
-
-  serialWrite(LS0val);
-  serialWrite(LS2val);
-  serialWrite(f_value);
-  serialWrite(r_value);
-  serialWrite(l_value);
-  serialWrite(ts_value);
-  Serial.println(ms_value);
-}
-
-void serialWrite(int value) {
-  // prints the value followed by a comma
-  Serial.print(value);
-  Serial.print(',');
 }
 
 int checkChoice() {
@@ -170,34 +123,45 @@ int checkChoice() {
   //  and 3 for stop
   // If Serial is not available, returns directions
   //  so that it continues to follow the same path.
-  if(Serial.available()) {
-     int choice = Serial.read();
-     if(choice > 52) { 
-        setColor(255, 255, 0);// turn eyes yellow
-        choice = choice - 4;
-     }
-     else {
-        setColor(0, 255, 0);  // turn eyes green
-     }
+
+  if (Serial.available()) {
+    int choice = Serial.read();
+    if (choice > 52) {
+      setColor(255, 255, 0);// turn eyes yellow
+      choice = choice - 4;
+    }
+    else {
+      setColor(0, 255, 0);  // turn eyes green
+    }
     return choice - 48;
   }
   else {
-    return directions;
+    return behavior;
   }
 }
 
 void moveTurtle(int whichWay) {
-  if(whichWay == 0) {
-    moveForward();
+  int next = state;
+
+  if (whichWay == GO_FORWARD) {
+    next = go_forward(state);
   }
-  else if(whichWay == 1) {
+  else if (whichWay == TURN_LEFT) {
+    next = turn_left(state);
+  }
+  else if (whichWay == TURN_RIGHT) {
     turnRight();
-  }
-  else if(whichWay == 2) {
-    turnLeft();
   }
   else {
     stopMoving();
+  }
+
+  if (next != state) {
+    float now = time_sec();
+    Serial.println(now - last_transition);
+    last_transition = now;
+    Serial.print(state); Serial.print("-->"); Serial.println(next);
+    state = next;
   }
 }
 
@@ -205,16 +169,10 @@ void setColor(int red, int green, int blue)
 {
   analogWrite(eye_r, red);
   analogWrite(eye_g, green);
-  analogWrite(eye_b, blue);  
+  analogWrite(eye_b, blue);
 }
 
 // Returns the value of the requested pin from the multiplexer
-int readMultiplexer(int pin_num) {
-  digitalWrite(s[0], (pin_num & 1) ? HIGH : LOW);
-  digitalWrite(s[1], (pin_num & 2) ? HIGH : LOW);
-  digitalWrite(s[2], (pin_num & 4) ? HIGH : LOW);
-  return analogRead(multi_pin);
-}
 
 // LEG MOVEMENT CODE
 bool ground(char side) {
@@ -231,117 +189,120 @@ float time_sec() {
   return millis() / 1000.;
 }
 
-void moveForward() {
-  if (digitalRead(ON_OFF_PIN) == 1) {
-    //Stop, don't move.
+int go_forward(int state) {
+  bool gl = ground('l');
+  bool gr = ground('r');
 
-    legL->run(RELEASE);
-    legR->run(RELEASE);
+  int next = state;
+  servo_l.write(0);
+  servo_r.write(180);
 
-    delay(1000);
-  } else {
-    bool gl = ground('l');
-    bool gr = ground('r');
-    int next = state;
-
-    switch (state) {
-      case LEFT_MOVE:
-        legL->run(FORWARD);
-        legR->run(RELEASE);
-        if (!gl) {
-          next = LEFT_UP;
-        }
-        break;
-      case LEFT_UP:
-        legL->run(FORWARD);
-        legR->run(RELEASE);
-        if (gl) {
-          next = RIGHT_MOVE;
-        }
-        break;
-      case RIGHT_MOVE:
-        legL->run(RELEASE);
-        legR->run(FORWARD);
-        if (!gr) {
-          next = RIGHT_UP;
-        }
-        break;
-      case RIGHT_UP:
-        legL->run(RELEASE);
-        legR->run(FORWARD);
-        if (gr) {
-          next = LEFT_MOVE;
-        }
-        break;
-    }
-
-    if (next != state) {
-      float now = time_sec();
-      last_transition = now;
-      state = next;
-    }
-    delay(100);
+  switch (state) {
+    case LEFT_MOVE:
+      motor_l->run(FORWARD);
+      motor_r->run(RELEASE);
+      if (!gl) {
+        next = LEFT_UP;
+        motor_r->setSpeed(HALF_SPEED);
+      }
+      break;
+    case LEFT_UP:
+      motor_l->run(FORWARD);
+      motor_r->run(FORWARD);
+      if (gl) {
+        next = RIGHT_MOVE;
+        motor_r->setSpeed(FULL_SPEED);
+      }
+      break;
+    case RIGHT_MOVE:
+      motor_l->run(RELEASE);
+      motor_r->run(FORWARD);
+      if (!gr) {
+        next = RIGHT_UP;
+        motor_l->setSpeed(HALF_SPEED);
+      }
+      break;
+    case RIGHT_UP:
+      motor_l->run(FORWARD );
+      motor_r->run(FORWARD);
+      if (gr) {
+        next = LEFT_MOVE;
+        motor_l->setSpeed(FULL_SPEED);
+      }
+      break;
   }
-
-  gyro.read();
-  Serial.println("Forward");
+  return next;
 }
 
-void turnLeft() {
-  if (digitalRead(ON_OFF_PIN) == 1) {
-    //Stop, don't move.
+int turn_left(int state) {
 
-    legL->run(RELEASE);
-    legR->run(RELEASE);
+  bool gl = ground('l');
+  bool gr = ground('r');
 
-    delay(1000);
-  } else {
-    bool gl = ground('l');
-    bool gr = ground('r');
-    int next = state;
+  int next = state;
+  // still want to alternate between legs
 
-    switch (state) {
-      case LEFT_MOVE:
-        legL->run(FORWARD);
-        legR->run(RELEASE);
-        if (!gl) {
-          next = LEFT_UP;
-        }
-        break;
-      case LEFT_UP:
-        legL->run(FORWARD);
-        legR->run(RELEASE);
-        if (gl) {
-          next = RIGHT_MOVE;
-        }
-        break;
-      case RIGHT_MOVE:
-        legL->run(RELEASE);
-        legR->run(FORWARD);
-        if (!gr) {
-          next = RIGHT_MOVE;
-        }
-        break;
-    }
-
-    if (next != state) {
-      float now = time_sec();
-      last_transition = now;
-      state = next;
-    }
-    delay(100);
+  switch (state) {
+    case LEFT_MOVE:
+      break;
+    case LEFT_UP:
+      break;
+    case RIGHT_MOVE:
+      break;
+    case RIGHT_UP:
+      break;
   }
+  if (!gl) {
+    // no ground contact on left foot
+    //set left foot down as pivot
+    motor_l->setSpeed(HALF_SPEED);
+    motor_l->run(FORWARD);
+    motor_r->setSpeed(HALF_SPEED);
+    motor_r->run(FORWARD);
+  } else {
+    // fix left leg position
+    motor_l->run(RELEASE);
+    if (gr) { //right leg ground contact
+      if (servo_r_pos > 0 && servo_r_dir == -1) {
+        // can move servo
+        servo_r_pos = max(servo_r_pos - D_THETA, 0);
+        motor_r->setSpeed(HALF_SPEED);
+        motor_r->run(FORWARD);
+        servo_r.write(servo_r_pos);
+      } else {
+        // can't move servo anymore
+        /// lift leg and return servo
+        servo_r_dir = 1;
+        motor_r->setSpeed(FULL_SPEED);
+        motor_r->run(FORWARD);
+      }
 
-  gyro.read();
-  Serial.println("Left");
+    } else {
+      // no ground contact on right leg
+      motor_l->run(RELEASE); // need left leg support
+      if (servo_r_pos < 180 && servo_r_dir == 1) {
+        // return servo
+        servo_r_pos = min(servo_r_pos + D_THETA, 180);
+        motor_r->run(RELEASE);
+        servo_r.write(servo_r_pos);
+      } else {
+        // done returning servo
+        servo_r_dir = -1;
+        motor_r->setSpeed(FULL_SPEED);
+        motor_r->run(FORWARD);
+      }
+    }
+
+  }
+  return next;
 }
 
 void turnRight() {
   if (digitalRead(ON_OFF_PIN) == 1) {
     //Stop, don't move.
 
-    legL->run(RELEASE);
-    legR->run(RELEASE);
+    motor_l->run(RELEASE);
+    motor_r->run(RELEASE);
 
     delay(1000);
   } else {
@@ -351,22 +312,22 @@ void turnRight() {
 
     switch (state) {
       case LEFT_MOVE:
-        legL->run(FORWARD);
-        legR->run(RELEASE);
+        motor_l->run(FORWARD);
+        motor_r->run(RELEASE);
         if (!gl) {
           next = LEFT_MOVE;
         }
         break;
       case RIGHT_MOVE:
-        legL->run(RELEASE);
-        legR->run(FORWARD);
+        motor_l->run(RELEASE);
+        motor_r->run(FORWARD);
         if (!gr) {
           next = RIGHT_UP;
         }
         break;
       case RIGHT_UP:
-        legL->run(RELEASE);
-        legR->run(FORWARD);
+        motor_l->run(RELEASE);
+        motor_r->run(FORWARD);
         if (gr) {
           next = LEFT_MOVE;
         }
@@ -385,7 +346,11 @@ void turnRight() {
 }
 
 void stopMoving() {
-  legL->run(RELEASE);
-  legR->run(RELEASE);
-  Serial.println("Stop");
+  motor_l->run(RELEASE);
+  motor_r->run(RELEASE);
+}
+
+void report() {
+  
+  serialWrite(LS0val, LS2val, f_value, r_value, l_value, ts_value, ms_value, behavior);
 }
