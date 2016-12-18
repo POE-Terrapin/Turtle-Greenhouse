@@ -3,7 +3,7 @@
 dht DHT;
 
 
-#define DHT22_PIN 5
+#define DHT22_PIN 13
 
 void setup()
 {

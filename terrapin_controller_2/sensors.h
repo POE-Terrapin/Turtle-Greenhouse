@@ -35,12 +35,13 @@ Gyro gyro(gyro_pins);
 // Set up the pins for the different sensors
 //  LS stands for Light Sensor. Numbers increase
 //  clockwise from the front: LS0 is front, LS1 is
-//  at 3 o'clock (from top view), LS2 is in back, etc.
+//  at 3 o'clock (from top view), LS2 is in back, etc.---
 
 // left-right contact touch sensor
 
 void readSensors() {
   // Reads the sensors and writes them to Serial
+  
   LS0val = mux.read(LS0);
   LS2val = mux.read(LS2);
 
@@ -49,8 +50,9 @@ void readSensors() {
   l_value = mux.read(l_ir);
 
   ts_value = mux.read(ts);
+  serialWrite("ts", ts_value);
   ms_value = mux.read(ms);
-
+  serialWrite("ms", ms_value);
   contact.read();
   on_sw.read();
   gyro.read();

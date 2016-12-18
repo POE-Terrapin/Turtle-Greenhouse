@@ -20,7 +20,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor* motor_l = AFMS.getMotor(4);
 Adafruit_DCMotor* motor_r = AFMS.getMotor(3);
 
-const int FULL_SPEED = 150;
+const int FULL_SPEED = 128;
 const int HALF_SPEED = FULL_SPEED / 2;
 
 // servos
@@ -86,9 +86,11 @@ void setup() {
 void loop() {
   // Read all sensors
   readSensors();
-
+  //serialWrite("gl : ", !contact.get(0), ", gr : ", !contact.get(1));
+  
   if (!on()) {
     behavior = STOP;
+    moveTurtle(STOP);
     Serial.println("OFF");
     delay(1000);
   } else {
@@ -110,6 +112,7 @@ int checkChoice() {
     int choice = Serial.read();
     if (choice > '4') {
       setColor(255, 255, 0);// turn eyes yellow - warning
+      return choice - '4';
     }
     else {
       setColor(0, 255, 0);  // turn eyes green
@@ -127,9 +130,12 @@ void moveTurtle(int whichWay) {
   }
   else if (whichWay == TURN_LEFT) {
     next = turn_left(state);
+    //next = go_forward(state);
   }
   else if (whichWay == TURN_RIGHT) {
-    turnRight();
+    next = go_forward(state);
+    //turnRight();
+    
   }
   else {
     stopMoving();
@@ -152,18 +158,19 @@ void setColor(int red, int green, int blue)
 }
 
 // Returns the value of the requested pin from the multiplexer
-
 float time_sec() {
   return millis() / 1000.;
 }
 
 int go_forward(int state) {
+  
+  Serial.println("GOING FORWARD!");
   bool gl = !contact.get(0);
   bool gr = !contact.get(1);
 
   int next = state;
-  servo_l.write(0);
-  servo_r.write(180);
+  servo_l.write(180);
+  servo_r.write(0);
 
   switch (state) {
     case LEFT_MOVE:
@@ -203,7 +210,7 @@ int go_forward(int state) {
 }
 
 int turn_left(int state) {
-
+  Serial.println("TURNING LEFT!");
   bool gl = ground('l');
   bool gr = ground('r');
 
@@ -266,6 +273,7 @@ int turn_left(int state) {
 }
 
 void turnRight() {
+  Serial.println("TURNING RIGHT!");
   if (!on()) {
     //Stop, don't move.
 

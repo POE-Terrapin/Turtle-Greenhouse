@@ -18,7 +18,7 @@ struct Sensor {
   Sensor(const char* _name, const int* _pins, int _n, char _type, bool pullup=false):
     name(_name), pins(_pins), n(_n), type(_type) {
     for (int i = 0; i < n; ++i) {
-      pinMode(pins[i], pullup?INPUT:INPUT_PULLUP);
+      pinMode(pins[i], pullup?INPUT_PULLUP:INPUT);
     }
     // allocate vals
     vals = (int*)malloc(sizeof(int) * n);
@@ -68,5 +68,6 @@ struct Multiplexer {
     return analogRead(val_pin);
   }
 };
+
 
 #endif
