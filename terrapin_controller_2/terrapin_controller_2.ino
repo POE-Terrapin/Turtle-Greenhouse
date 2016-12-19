@@ -21,13 +21,16 @@ Adafruit_DCMotor* motor_l = AFMS.getMotor(4);
 Adafruit_DCMotor* motor_r = AFMS.getMotor(3);
 
 const int FULL_SPEED = 128;
-const int HALF_SPEED = FULL_SPEED *3 / 4;
+const int HALF_SPEED = FULL_SPEED / 2;
 
 // servos
 Servo servo_l, servo_r;
 
-int servo_r_pos = 0;
+int servo_r_pos = 10;
 int servo_r_dir = 1;
+
+int servo_l_pos = 0;
+int servo_l_dir = 1;
 const int D_THETA = 20;
 
 const int SERVO_L_PIN = 9;
@@ -85,8 +88,8 @@ void setup() {
 
 void loop() {
   // Read all sensors
-  //readSensors();
-  //serialWrite("gl : ", !contact.get(0), ", gr : ", !contact.get(1));
+  readSensors();
+  serialWrite("gl : ", !contact.get(0), ", gr : ", !contact.get(1));
   
   if (!on()) {
     behavior = STOP;
@@ -96,6 +99,7 @@ void loop() {
   } else {
     behavior = checkChoice();
     moveTurtle(behavior);
+    //moveTurtle(GO_FORWARD);
   }
   report();
   delay(100);
@@ -162,12 +166,12 @@ float time_sec() {
   return millis() / 1000.;
 }
 
-int go_forward(int state) {
-  
+int go_forward(int state) { 
   Serial.println("GOING FORWARD!");
   bool gl = !contact.get(0);
   bool gr = !contact.get(1);
 
+  Serial.println(gl);
   int next = state;
   servo_l.write(180);
   servo_r.write(0);
