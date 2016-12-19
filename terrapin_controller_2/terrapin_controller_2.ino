@@ -21,7 +21,7 @@ Adafruit_DCMotor* motor_l = AFMS.getMotor(4);
 Adafruit_DCMotor* motor_r = AFMS.getMotor(3);
 
 const int FULL_SPEED = 128;
-const int HALF_SPEED = FULL_SPEED / 2;
+const int HALF_SPEED = FULL_SPEED *3 / 4;
 
 // servos
 Servo servo_l, servo_r;
@@ -63,8 +63,8 @@ void setup() {
   bool gl = ground('l');
   bool gr = ground('r');
 
-  if (gl ^ gr) {
-    state = gl ? RIGHT_MOVE : LEFT_MOVE;
+  if (gl ^ gr) { // if gl != gr, aka both not on the ground
+    state = gl ? RIGHT_MOVE : LEFT_MOVE; // if gl is on the ground, right foot moves, otherwise left foot
   } else {
     // both or neither switches triggered
     state = RIGHT_MOVE; // pick a motion
@@ -85,7 +85,7 @@ void setup() {
 
 void loop() {
   // Read all sensors
-  readSensors();
+  //readSensors();
   //serialWrite("gl : ", !contact.get(0), ", gr : ", !contact.get(1));
   
   if (!on()) {
@@ -133,7 +133,7 @@ void moveTurtle(int whichWay) {
     //next = go_forward(state);
   }
   else if (whichWay == TURN_RIGHT) {
-    next = go_forward(state);
+    next = turn_right(state);
     //turnRight();
     
   }
@@ -213,6 +213,7 @@ int turn_left(int state) {
   Serial.println("TURNING LEFT!");
   bool gl = ground('l');
   bool gr = ground('r');
+  
 
   int next = state;
   // still want to alternate between legs
@@ -272,11 +273,78 @@ int turn_left(int state) {
   return next;
 }
 
+
+int turn_right(int state) {
+  Serial.println("TURNING RIGHT!");
+  bool gl = ground('l');
+  bool gr = ground('r');
+  
+
+  int next = state;
+  // still want to alternate between legs
+
+  switch (state) {
+    case LEFT_MOVE:
+      break;
+    case LEFT_UP:
+      break;
+    case RIGHT_MOVE:
+      break;
+    case RIGHT_UP:
+      break;
+  }
+  if (!gr) {
+    // no ground contact on right foot
+    //set right foot down as pivot
+    motor_l->setSpeed(HALF_SPEED);
+    motor_l->run(FORWARD);
+    motor_r->setSpeed(HALF_SPEED);
+    motor_r->run(FORWARD);
+  } else {
+    // fix left leg position
+    motor_r->run(RELEASE);
+    if (gl) { //left leg ground contact
+      if (servo_l_pos > 0 && servo_l_dir == -1) {
+        // can move servo
+        servo_l_pos = max(servo_l_pos - D_THETA, 0);
+        motor_l->setSpeed(HALF_SPEED);
+        motor_l->run(FORWARD);
+        servo_l.write(servo_l_pos);
+      } else {
+        // can't move servo anymore
+        /// lift leg and return servo
+        servo_l_dir = 1;
+        motor_l->setSpeed(FULL_SPEED);
+        motor_l->run(FORWARD);
+      }
+
+    } else {
+      // no ground contact on right leg
+      motor_r->run(RELEASE); // need left leg support
+      if (servo_l_pos < 180 && servo_l_dir == 1) {
+        // return servo
+        servo_l_pos = min(servo_l_pos + D_THETA, 180);
+        motor_l->run(RELEASE);
+        servo_l.write(servo_l_pos);
+      } else {
+        // done returning servo
+        servo_l_dir = -1;
+        motor_l->setSpeed(FULL_SPEED);
+        motor_l->run(FORWARD);
+      }
+    }
+
+  }
+  return next;
+}
+
 void turnRight() {
   Serial.println("TURNING RIGHT!");
   if (!on()) {
     //Stop, don't move.
 
+    motor_l->setSpeed(FULL_SPEED);
+    motor_r->setSpeed(FULL_SPEED);
     motor_l->run(RELEASE);
     motor_r->run(RELEASE);
 
